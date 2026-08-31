@@ -349,3 +349,12 @@ Podés encadenar `crowe` con otras herramientas del ecosistema en una única lí
 crowe audit src/ && daedalus compile src/*.c -o bin/app
 ````
 
+---
+
+(manual-crowe-seccion-plugins)=
+## 9. Extensión, Desarrollo de Plugins y API Python
+
+Para crear tus propias reglas, conectores de evaluación o integrar `crowe` programáticamente en pipelines de CI/CD:
+
+- 👉 **Consultá la guía completa:** [Guía de Extensión y Creación de Plugins](plugins.md)
+
