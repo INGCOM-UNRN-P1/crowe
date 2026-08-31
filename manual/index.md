@@ -179,3 +179,52 @@ check-crowe:
 ````
 
 Ejecutá `make check-crowe` antes de cada commit para asegurar que tu código conserve el estado de aprobación.
+
+---
+
+(manual-crowe-arquitectura)=
+## 7. Arquitectura Interna y Mecanismo Técnico
+
+La herramienta **`crowe`** implementa un motor de alta precisión basado en:
+
+- **Tecnología Núcleo:** `GCC Cross-Toolchains + QEMU User Emulation + Clang Target AST Matcher`.
+- **Aislamiento y Determinismo:** Diseñada para operar sin efectos colaterales en entornos de integración continua (CI), terminales de estudiantes y servidores docentes headless.
+- **Manejo de Errores Pedagógico:** Todo fallo de sintaxis, memoria o lógica se traduce en una acción prescriptiva concreta con su respectiva justificación técnica.
+
+---
+
+(manual-crowe-ecosistema)=
+## 8. Integración y Conexión con el Ecosistema
+
+````{note}
+Ninguna herramienta opera de forma aislada. **`crowe`** forma parte del pipeline integral de evaluación, verificación y enseñanza de la cátedra.
+````
+
+### Diagrama de Flujo e Interoperabilidad
+
+````{mermaid}
+graph TD
+    SRC[Código C] --> CRW[Crowe: Linter Multi-Arquitectura]
+    CRW -->|Chequeo Endianness/Tipos| ABI[Modelos x86_64, ARM, 32-bit]
+    CRW -->|Tipos Seguros stdint.h| DAE[Daedalus: Compilador Defensivo]
+    CRW -->|Binario Portable| NOS[Nostromo: Sandbox Linux]
+````
+
+### Matriz de Intercambio de Datos
+
+| Canal | Herramientas Conectadas | Tipo de Datos Transferidos |
+| :--- | :--- | :--- |
+| **Entradas (Inputs)** | - `Código fuente C (.c y .h)` | Código fuente, AST, binarios, testcases, contratos |
+| **Salidas (Outputs)** | - `daedalus (compilación cruzada)`
+- `nostromo (ejecución multiarch)` | Informes Markdown, diagnósticos Rich, JSON, actas |
+| **Sincronización** | `brett`, `kane`, `ferro` | Validación cruzada, flags compartidos y autofix |
+
+### Pipeline de Integración Recomendado
+
+Podés encadenar `crowe` con otras herramientas del ecosistema en una única línea de comando:
+
+````{code-block} bash
+# Pipeline de integración típico
+crowe audit src/ && daedalus compile src/*.c -o bin/app
+````
+
