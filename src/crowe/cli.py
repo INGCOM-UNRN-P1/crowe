@@ -19,11 +19,31 @@ app = typer.Typer(
 console = Console()
 
 
-@app.command()
+def generar_seccion_markdown(report: PortabilityReport) -> str:
+    """Genera sección de auditoría de portabilidad para Dredd."""
+    lines = ["## Portabilidad Multi-Arquitectura y Endianness (Crowe)\n"]
+    lines.append(f"- **Archivos analizados:** {len(report.files_analyzed)}")
+    lines.append(f"- **Problemas de portabilidad detectados:** {len(report.issues)}\n")
+    if report.passed:
+        lines.append("> [!TIP]\n> **Código Portable:** No se detectaron asunciones dependientes de arquitectura (endianness, sizeof punteros, tipos dependientes).\n")
+    else:
+        lines.append("> [!WARNING]\n> **Riesgos de Portabilidad:** Se detectaron construcciones dependientes de hardware o arquitectura.\n")
+        lines.append("| Archivo | Línea | Código | Severidad | Descripción | Sugerencia |")
+        lines.append("| :--- | :---: | :---: | :---: | :--- | :--- |")
+        for iss in report.issues:
+            fname = Path(iss.file_path).name
+            lines.append(f"| `{fname}` | {iss.line_number} | `{iss.code}` | **{iss.severity}** | {iss.message} | {iss.suggestion} |")
+        lines.append("")
+    return "\n".join(lines)
+
+
+@app.command("lint")
+@app.command("check")
 def lint(
     paths: List[Path] = typer.Argument(..., help="Archivos o directorios C a analizar"),
     check_cross_compile: bool = typer.Option(False, "--cross-compile", "-c", help="Intentar compilación contra toolchains x86_64, aarch64 y riscv64"),
-    json_output: bool = typer.Option(False, "--json", help="Emitir salida en formato JSON estructurado")
+    json_output: bool = typer.Option(False, "--json", help="Emitir salida en formato JSON estructurado"),
+    output_md: Optional[Path] = typer.Option(None, "--md", "--output-md", help="Generar sección de reporte en formato Markdown para fusión en Dredd."),
 ):
     """Analiza archivos C buscando asunciones no portables de hardware y endianness."""
     files_to_check: List[Path] = []
@@ -52,6 +72,13 @@ def lint(
         architectures=arch_statuses,
         passed=not has_errors
     )
+
+    if output_md:
+        md_text = generar_seccion_markdown(report)
+        output_md.parent.mkdir(parents=True, exist_ok=True)
+        output_md.write_text(md_text, encoding="utf-8")
+        console.print(f"[bold green]✓ Sección Markdown generada en:[/bold green] {output_md}")
+        raise typer.Exit(code=0 if report.passed else 1)
 
     if json_output:
         print(json.dumps(report.model_dump(), indent=2, ensure_ascii=False))
@@ -101,6 +128,40 @@ def lint(
 
     if not report.passed:
         raise typer.Exit(code=1)
+
+
+@app.command("report")
+def report_cmd(
+    paths: List[Path] = typer.Argument(..., help="Archivos o directorios C a analizar"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Ruta de destino del archivo Markdown."),
+):
+    """Genera directamente la sección de reporte Markdown de CROWE para Dredd."""
+    files_to_check: List[Path] = []
+    for p in paths:
+        if p.is_file():
+            files_to_check.append(p)
+        elif p.is_dir():
+            files_to_check.extend(list(p.glob("**/*.c")) + list(p.glob("**/*.h")))
+
+    all_issues = []
+    for f in files_to_check:
+        all_issues.extend(lint_file_portability(f))
+
+    has_errors = any(i.severity == "ERROR" for i in all_issues)
+    report = PortabilityReport(
+        files_analyzed=[str(f) for f in files_to_check],
+        issues=all_issues,
+        architectures=[],
+        passed=not has_errors
+    )
+    md_content = generar_seccion_markdown(report)
+
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(md_content, encoding="utf-8")
+        console.print(f"[bold green]✓ Reporte Markdown generado en:[/bold green] {output}")
+    else:
+        print(md_content)
 
 
 @app.command()
