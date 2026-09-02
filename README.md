@@ -4,6 +4,34 @@
 
 ---
 
+## 🎯 Alcance
+
+### Qué cubre
+- Auditoría estática de portabilidad multi-arquitectura en código fuente C.
+- Detección de uso de tipos con tamaño dependiente de la arquitectura (`long`, `unsigned long`, `size_t`, punteros) sin utilizar `<stdint.h>`.
+- Detección de asunciones rígidas sobre el ancho de palabra (32 bits vs 64 bits).
+- Detección de pasaje de estructuras voluminosas por valor a través de la pila en lugar de punteros constantes.
+
+### Qué no cubre (Límites y Delegación)
+- Compilación cruzada real ni emulación de hardware con QEMU (delegado al toolchain de cátedra).
+- Auditoría del alineamiento interno de campos de structs (delegado a `brett`).
+- Inspección de endianness en disco (delegado a `kane`).
+
+---
+
+## 📋 Requisitos
+
+### Requisitos de Sistema y Entorno
+- Multiplataforma. Python >= 3.10.
+
+### Dependencias Externas y Binarios
+- Ninguno obligatorio (análisis estático con Tree-Sitter).
+
+### Integración en el Ecosistema
+- CLI `crowe`. Plugin registrado en `ripley.plugins` (`portability`).
+
+---
+
 ## 🚀 Uso Rápido
 
 ```bash
