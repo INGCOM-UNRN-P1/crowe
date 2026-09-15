@@ -21,7 +21,10 @@ console = Console()
 
 def generar_seccion_markdown(report: PortabilityReport) -> str:
     """Genera sección de auditoría de portabilidad para Dredd."""
-    lines = ["## Portabilidad Multi-Arquitectura y Endianness (Crowe)\n"]
+    lines = [
+        "<!-- dredd-section: crowe v1.0.0 -->\n",
+        "## Portabilidad Multi-Arquitectura y Endianness (Crowe)\n",
+    ]
     lines.append(f"- **Archivos analizados:** {len(report.files_analyzed)}")
     lines.append(f"- **Problemas de portabilidad detectados:** {len(report.issues)}\n")
     if report.passed:
@@ -31,8 +34,10 @@ def generar_seccion_markdown(report: PortabilityReport) -> str:
         lines.append("| Archivo | Línea | Código | Severidad | Descripción | Sugerencia |")
         lines.append("| :--- | :---: | :---: | :---: | :--- | :--- |")
         for iss in report.issues:
-            fname = Path(iss.file_path).name
-            lines.append(f"| `{fname}` | {iss.line_number} | `{iss.code}` | **{iss.severity}** | {iss.message} | {iss.suggestion} |")
+            fname = Path(iss.file_path).name.replace("|", "&#124;")
+            msg_limpio = iss.message.replace("|", "&#124;")
+            sug_limpio = iss.suggestion.replace("|", "&#124;")
+            lines.append(f"| `{fname}` | {iss.line_number} | `{iss.code}` | **{iss.severity}** | {msg_limpio} | {sug_limpio} |")
         lines.append("")
     return "\n".join(lines)
 

@@ -23,6 +23,7 @@ class TargetArchStatus(BaseModel):
 
 
 class PortabilityReport(BaseModel):
+    schema_version: str = "1.0.0"
     files_analyzed: List[str] = Field(default_factory=list)
     issues: List[PortabilityIssue] = Field(default_factory=list)
     architectures: List[TargetArchStatus] = Field(default_factory=list)
