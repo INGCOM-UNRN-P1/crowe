@@ -169,6 +169,67 @@ def report_cmd(
         print(md_content)
 
 
+@app.command("doctor")
+def doctor_cmd(
+    json_output: bool = typer.Option(False, "--json", help="Emitir diagnóstico en formato JSON estructurado."),
+) -> None:
+    """Verifica el estado del entorno de auditoría de portabilidad CROWE (Python, GCC nativo y cross-compiladores)."""
+    import shutil
+    import sys
+    from crowe.core.cross_compiler import COMPILERS
+    diagnostico = []
+
+    py_ok = sys.version_info >= (3, 10)
+    diagnostico.append({
+        "componente": "Python Runtime",
+        "estado": "OK" if py_ok else "ERROR",
+        "requerido": True,
+        "detalle": f"Python {sys.version.split()[0]}",
+    })
+
+    for arch, candidates in COMPILERS:
+        found = None
+        for cand in candidates:
+            p = shutil.which(cand)
+            if p:
+                found = f"{cand} ({p})"
+                break
+        req = (arch == "x86_64")
+        estado = "OK" if found else ("ADVERTENCIA" if not req else "ERROR")
+        diagnostico.append({
+            "componente": f"Toolchain {arch}",
+            "estado": estado,
+            "requerido": req,
+            "detalle": found or "No encontrado (opcional para compilación cruzada)",
+        })
+
+    todo_ok = py_ok and any(c["componente"] == "Toolchain x86_64" and c["estado"] == "OK" for c in diagnostico)
+
+    if json_output:
+        payload = {
+            "schema_version": "1.0.0",
+            "herramienta": "crowe",
+            "ok": todo_ok,
+            "componentes": diagnostico,
+        }
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        raise typer.Exit(code=0 if todo_ok else 1)
+
+    tabla = Table(title="🏥 Diagnóstico del Entorno CROWE (doctor)", border_style="cyan")
+    tabla.add_column("Componente", style="bold white")
+    tabla.add_column("Estado", justify="center")
+    tabla.add_column("Detalle")
+
+    for c in diagnostico:
+        color = "bold green" if c["estado"] == "OK" else ("bold yellow" if c["estado"] == "ADVERTENCIA" else "bold red")
+        simbolo = "✓" if c["estado"] == "OK" else ("⚠️" if c["estado"] == "ADVERTENCIA" else "✗")
+        tabla.add_row(c["componente"], f"[{color}]{simbolo} {c['estado']}[/{color}]", c["detalle"])
+
+    console.print(tabla)
+    if not todo_ok:
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def version():
     """Muestra la versión de CROWE."""

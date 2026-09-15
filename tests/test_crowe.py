@@ -1,5 +1,6 @@
 """Tests unitarios y de integración para CROWE."""
 
+import json
 from pathlib import Path
 from typer.testing import CliRunner
 from crowe.cli import app
@@ -7,6 +8,18 @@ from crowe.core.portability_linter import lint_file_portability
 from crowe.plugins.ripley_plugin import CrowePlugin
 
 runner = CliRunner()
+
+
+def test_cli_doctor():
+    res = runner.invoke(app, ["doctor"])
+    assert res.exit_code == 0
+    assert "doctor" in res.output.lower()
+
+    res_json = runner.invoke(app, ["doctor", "--json"])
+    assert res_json.exit_code == 0
+    data = json.loads(res_json.output)
+    assert data["herramienta"] == "crowe"
+    assert data["ok"] is True
 
 
 def test_lint_pointer_to_int_cast(tmp_path):
