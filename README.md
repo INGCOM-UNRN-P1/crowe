@@ -7,13 +7,14 @@
 ## 🎯 Alcance
 
 ### Qué cubre
-- Auditoría estática de portabilidad multi-arquitectura en código fuente C.
-- Detección de uso de tipos con tamaño dependiente de la arquitectura (`long`, `unsigned long`, `size_t`, punteros) sin utilizar `<stdint.h>`.
-- Detección de asunciones rígidas sobre el ancho de palabra (32 bits vs 64 bits).
-- Detección de pasaje de estructuras voluminosas por valor a través de la pila en lugar de punteros constantes.
+- Auditoría estática de portabilidad multi-arquitectura en código fuente C (reglas `CRW001` a `CRW005`).
+- Detección de truncamiento por casteo de puntero a `int` en 64 bits (`CRW001`).
+- Detección de asunciones de signo sobre `char` (`CRW002`) y orden de bytes (`CRW003`).
+- Detección de suposiciones rígidas sobre el ancho de `long` (`CRW004`).
+- Detección de arreglos de longitud variable (VLAs) con riesgo de desbordamiento de pila (`CRW005`).
 
 ### Qué no cubre (Límites y Delegación)
-- Compilación cruzada real ni emulación de hardware con QEMU (delegado al toolchain de cátedra).
+- Emulación o ejecución de binarios de hardware con QEMU (fuera del alcance).
 - Auditoría del alineamiento interno de campos de structs (delegado a `brett`).
 - Inspección de endianness en disco (delegado a `kane`).
 
@@ -25,7 +26,7 @@
 - Multiplataforma. Python >= 3.10.
 
 ### Dependencias Externas y Binarios
-- Ninguno obligatorio (análisis estático con Tree-Sitter).
+- Ninguno obligatorio para análisis estático; compiladores GCC cruzados (`aarch64-linux-gnu-gcc`, `riscv64-linux-gnu-gcc`) opcionales para `--cross-compile`.
 
 ### Integración en el Ecosistema
 - CLI `crowe`. Plugin registrado en `ripley.plugins` (`portability`).
@@ -37,6 +38,10 @@
 ```bash
 # Auditar portabilidad en archivos C
 crowe lint src/
+crowe check src/
+
+# Generar informe en formato Markdown
+crowe report src/
 
 # Probar compilación multi-arquitectura
 crowe lint src/ --cross-compile
