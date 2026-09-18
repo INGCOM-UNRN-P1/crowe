@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 from typing import List
 from crowe.core.models import PortabilityIssue
+from crowe.core.preprocesador import enmascarar_bloques_inactivos
 
 # Reglas estáticas de portabilidad
 PATTERNS = [
@@ -54,6 +55,9 @@ def lint_file_portability(file_path: Path) -> List[PortabilityIssue]:
     """Analiza un archivo fuente C en busca de violaciones de portabilidad."""
     issues = []
     content = file_path.read_text(encoding="utf-8", errors="replace")
+    # El contenido de un `#if 0` no se compila: enmascararlo evita
+    # reportar hallazgos sobre código deliberadamente desactivado.
+    content = enmascarar_bloques_inactivos(content)
     lines = content.splitlines()
 
     for idx, line in enumerate(lines, 1):
