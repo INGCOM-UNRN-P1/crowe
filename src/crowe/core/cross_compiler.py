@@ -33,7 +33,14 @@ def check_target_compilation(files: List[Path]) -> List[TargetArchStatus]:
             ))
             continue
 
-        cmd = [compiler_bin, "-c", "-Wall", "-Wextra", "-Werror", "-pedantic", "-std=c11"] + [str(f) for f in files] + ["-o", "/dev/null"]
+        # `-fsyntax-only` en vez de `-c ... -o /dev/null`: con más de un archivo,
+        # `-c` exige un `.o` por archivo y rechaza un único `-o` compartido
+        # ("cannot specify '-o' with '-c' ... with multiple files"), lo que
+        # hacía fallar SIEMPRE la verificación multi-archivo, presentándose
+        # como un fallo de portabilidad que no tiene nada que ver con eso.
+        # `-fsyntax-only` no emite objetos, así que no colisiona con `-o` ni
+        # con la cantidad de archivos.
+        cmd = [compiler_bin, "-fsyntax-only", "-Wall", "-Wextra", "-Werror", "-pedantic", "-std=c11"] + [str(f) for f in files]
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=5, check=False)
             results.append(TargetArchStatus(

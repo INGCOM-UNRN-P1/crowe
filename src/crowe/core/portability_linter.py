@@ -2,9 +2,26 @@
 
 import re
 from pathlib import Path
-from typing import List
+from typing import List, Set
 from crowe.core.models import PortabilityIssue
 from crowe.core.preprocesador import enmascarar_bloques_inactivos
+
+# CRW002 y CRW005 no se pueden resolver con un regex de una sola línea sin
+# falsos positivos masivos: necesitan saber si un identificador es realmente
+# `char` o si el corchete de un arreglo es una macro en vez de una variable.
+# Se recolectan en una pasada previa sobre el archivo completo.
+_DECL_CHAR = re.compile(r'\bchar\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:=|;|,|\[)')
+_DEFINE_MACRO = re.compile(r'^\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*)', re.MULTILINE)
+_IF_LT_ZERO = re.compile(r'\bif\s*\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*<\s*0\s*\)')
+_CHAR_LITERAL_NEGATIVO = re.compile(r'\bchar\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=\s*-\d+')
+_VLA_CANDIDATA = re.compile(r'\b[a-zA-Z0-9_]+\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\[\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\]\s*;')
+
+
+def _recolectar_chars_y_macros(contenido: str) -> tuple[Set[str], Set[str]]:
+    """Recorre el archivo completo para saber qué identificadores son `char` y cuáles macros."""
+    chars = set(m.group(1) for m in _DECL_CHAR.finditer(contenido))
+    macros = set(m.group(1) for m in _DEFINE_MACRO.finditer(contenido))
+    return chars, macros
 
 # Reglas estáticas de portabilidad
 PATTERNS = [
@@ -59,6 +76,7 @@ def lint_file_portability(file_path: Path) -> List[PortabilityIssue]:
     # reportar hallazgos sobre código deliberadamente desactivado.
     content = enmascarar_bloques_inactivos(content)
     lines = content.splitlines()
+    chars, macros = _recolectar_chars_y_macros(content)
 
     for idx, line in enumerate(lines, 1):
         # Ignorar comentarios puros
@@ -67,7 +85,23 @@ def lint_file_portability(file_path: Path) -> List[PortabilityIssue]:
             continue
 
         for code, category, severity, pattern, msg, suggestion in PATTERNS:
-            if pattern.search(line):
+            if code == "CRW002":
+                # `if (var < 0)` es un idioma común de C con cualquier entero
+                # con signo; solo es sospechoso si `var` es de verdad `char`.
+                if _CHAR_LITERAL_NEGATIVO.search(line):
+                    coincide = True
+                else:
+                    m = _IF_LT_ZERO.search(line)
+                    coincide = bool(m and m.group(1) in chars)
+            elif code == "CRW005":
+                # `int buf[MAX]` con `MAX` definida por macro no es un VLA: el
+                # tamaño es una constante de compilación, no una variable.
+                m = _VLA_CANDIDATA.search(line)
+                coincide = bool(m and m.group(1) not in macros)
+            else:
+                coincide = bool(pattern.search(line))
+
+            if coincide:
                 issues.append(PortabilityIssue(
                     code=code,
                     category=category,
