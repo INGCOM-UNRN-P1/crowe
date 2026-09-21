@@ -67,7 +67,8 @@ def test_cross_compile_multiarchivo_detecta_error_real(tmp_path):
     a = tmp_path / "a.c"
     c = tmp_path / "c.c"
     a.write_text("int suma(int x, int y) { return x + y; }\n", encoding="utf-8")
-    c.write_text("int main(void) { int x; return 0; }\n", encoding="utf-8")
+    # Error real de compilación (no un warning de estilo: ver CROWE-D0305).
+    c.write_text("int main(void) { return no_declarada; }\n", encoding="utf-8")
 
     resultados = check_target_compilation([a, c])
     x86 = next(r for r in resultados if r.architecture == "x86_64")

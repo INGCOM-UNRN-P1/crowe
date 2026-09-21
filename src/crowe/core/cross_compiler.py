@@ -33,6 +33,9 @@ def check_target_compilation(files: List[Path]) -> List[TargetArchStatus]:
             ))
             continue
 
+        # Sin `-Werror`: esto verifica portabilidad (¿compila en cada arquitectura?),
+        # no estilo. Con `-Werror` una variable sin usar tumbaba el gate; ahora solo
+        # un error real de compilación lo hace fallar y los warnings se informan.
         # `-fsyntax-only` en vez de `-c ... -o /dev/null`: con más de un archivo,
         # `-c` exige un `.o` por archivo y rechaza un único `-o` compartido
         # ("cannot specify '-o' with '-c' ... with multiple files"), lo que
@@ -40,14 +43,17 @@ def check_target_compilation(files: List[Path]) -> List[TargetArchStatus]:
         # como un fallo de portabilidad que no tiene nada que ver con eso.
         # `-fsyntax-only` no emite objetos, así que no colisiona con `-o` ni
         # con la cantidad de archivos.
-        cmd = [compiler_bin, "-fsyntax-only", "-Wall", "-Wextra", "-Werror", "-pedantic", "-std=c11"] + [str(f) for f in files]
+        cmd = [compiler_bin, "-fsyntax-only", "-Wall", "-Wextra", "-pedantic", "-std=c11"] + [str(f) for f in files]
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=5, check=False)
             results.append(TargetArchStatus(
                 architecture=arch,
                 compiler_available=True,
                 compilation_passed=(res.returncode == 0),
-                compiler_output=res.stderr if res.returncode != 0 else "Compilación limpia sin advertencias."
+                compiler_output=(
+                    res.stderr if res.returncode != 0
+                    else (res.stderr or "Compilación limpia sin advertencias.")
+                )
             ))
         except Exception as e:
             results.append(TargetArchStatus(

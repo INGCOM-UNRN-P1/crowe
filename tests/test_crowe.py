@@ -78,3 +78,20 @@ def test_ripley_plugin(tmp_path):
     res = plugin.run({"source_dir": str(tmp_path)})
     assert res["passed"] is True
     assert "issues" in res
+
+
+def test_warning_de_estilo_no_tumba_la_compilacion_cruzada(tmp_path):
+    """CROWE-D0305: una variable sin usar es un warning, no un fallo de portabilidad."""
+    from crowe.core.cross_compiler import check_target_compilation
+
+    warn = tmp_path / "warn.c"
+    warn.write_text("int f(void) { int sin_usar; return 0; }\n", encoding="utf-8")
+    roto = tmp_path / "roto.c"
+    roto.write_text("int f(void) { return ; }\nint g( {\n", encoding="utf-8")
+
+    x86 = [r for r in check_target_compilation([warn]) if r.architecture == "x86_64"][0]
+    assert x86.compiler_available and x86.compilation_passed
+    assert "sin_usar" in x86.compiler_output  # el warning se informa igual
+
+    x86_roto = [r for r in check_target_compilation([roto]) if r.architecture == "x86_64"][0]
+    assert not x86_roto.compilation_passed
