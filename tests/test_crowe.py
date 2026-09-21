@@ -66,9 +66,10 @@ def test_cli_lint_json(tmp_path):
 
 
 def test_cli_version():
-    res = runner.invoke(app, ["version"])
+    res = runner.invoke(app, ["--version"])
     assert res.exit_code == 0
     assert "CROWE" in res.output
+    assert runner.invoke(app, ["version"]).exit_code != 0  # CROWE-D0402: ya no es subcomando
 
 
 def test_ripley_plugin(tmp_path):
@@ -112,3 +113,14 @@ def test_check_verifica_multiarquitectura_por_defecto_y_lint_no(tmp_path, monkey
     assert len(llamadas) == 1
     runner.invoke(app, ["check", "--no-cross-compile", str(f)])
     assert len(llamadas) == 1
+
+
+def test_report_sale_1_ante_un_error_de_portabilidad(tmp_path):
+    """CROWE-D0402: report refleja el veredicto en el exit code."""
+    malo = tmp_path / "malo.c"
+    malo.write_text("void t(void* ptr) { int x = (int)ptr; }\n", encoding="utf-8")
+    limpio = tmp_path / "ok.c"
+    limpio.write_text("int f(void) { return 0; }\n", encoding="utf-8")
+    assert runner.invoke(app, ["report", str(limpio)]).exit_code == 0
+    res = runner.invoke(app, ["report", str(malo)])
+    assert res.exit_code == 1, res.output

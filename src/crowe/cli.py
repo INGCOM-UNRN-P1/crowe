@@ -19,6 +19,23 @@ app = typer.Typer(
 console = Console()
 
 
+def _version_callback(value: bool) -> None:
+    if value:
+        from crowe import __version__
+        console.print(f"[bold cyan]CROWE[/bold cyan] versión [green]{__version__}[/green]")
+        raise typer.Exit(code=0)
+
+
+@app.callback()
+def main_callback(
+    version: Optional[bool] = typer.Option(
+        None, "--version", "-v", help="Muestra la versión de CROWE.",
+        callback=_version_callback, is_eager=True,
+    ),
+) -> None:
+    pass
+
+
 def generar_seccion_markdown(report: PortabilityReport) -> str:
     """Genera sección de auditoría de portabilidad para Dredd."""
     lines = [
@@ -190,6 +207,8 @@ def report_cmd(
         console.print(f"[bold green]✓ Reporte Markdown generado en:[/bold green] {output}")
     else:
         print(md_content)
+    if not report.passed:
+        raise typer.Exit(code=1)
 
 
 @app.command("doctor")
@@ -251,13 +270,6 @@ def doctor_cmd(
     console.print(tabla)
     if not todo_ok:
         raise typer.Exit(code=1)
-
-
-@app.command()
-def version():
-    """Muestra la versión de CROWE."""
-    from crowe import __version__
-    console.print(f"[bold cyan]CROWE[/bold cyan] versión [green]{__version__}[/green]")
 
 
 if __name__ == "__main__":
