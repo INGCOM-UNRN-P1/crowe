@@ -42,14 +42,12 @@ def generar_seccion_markdown(report: PortabilityReport) -> str:
     return "\n".join(lines)
 
 
-@app.command("lint")
-@app.command("check")
-def lint(
-    paths: List[Path] = typer.Argument(..., help="Archivos o directorios C a analizar"),
-    check_cross_compile: bool = typer.Option(False, "--cross-compile", "-c", help="Intentar compilación contra toolchains x86_64, aarch64 y riscv64"),
-    json_output: bool = typer.Option(False, "--json", help="Emitir salida en formato JSON estructurado"),
-    output_md: Optional[Path] = typer.Option(None, "--md", "--output-md", help="Generar sección de reporte en formato Markdown para fusión en Dredd."),
-):
+def _lint(
+    paths: List[Path],
+    check_cross_compile: bool,
+    json_output: bool,
+    output_md: Optional[Path],
+) -> None:
     """Analiza archivos C buscando asunciones no portables de hardware y endianness."""
     files_to_check: List[Path] = []
     for p in paths:
@@ -133,6 +131,31 @@ def lint(
 
     if not report.passed:
         raise typer.Exit(code=1)
+
+
+_OPT_ARGS = "Archivos o directorios C a analizar"
+
+
+@app.command("lint")
+def lint(
+    paths: List[Path] = typer.Argument(..., help=_OPT_ARGS),
+    check_cross_compile: bool = typer.Option(False, "--cross-compile/--no-cross-compile", "-c", help="Intentar compilación contra toolchains x86_64, aarch64 y riscv64 (por defecto desactivada en `lint`)."),
+    json_output: bool = typer.Option(False, "--json", help="Emitir salida en formato JSON estructurado"),
+    output_md: Optional[Path] = typer.Option(None, "--md", "--output-md", help="Generar sección de reporte en formato Markdown para fusión en Dredd."),
+):
+    """Analiza archivos C buscando asunciones no portables de hardware y endianness."""
+    _lint(paths, check_cross_compile, json_output, output_md)
+
+
+@app.command("check")
+def check(
+    paths: List[Path] = typer.Argument(..., help=_OPT_ARGS),
+    check_cross_compile: bool = typer.Option(True, "--cross-compile/--no-cross-compile", "-c", help="Verificar compilación contra toolchains x86_64, aarch64 y riscv64 (por defecto activada en `check`, el punto de entrada de ripley)."),
+    json_output: bool = typer.Option(False, "--json", help="Emitir salida en formato JSON estructurado"),
+    output_md: Optional[Path] = typer.Option(None, "--md", "--output-md", help="Generar sección de reporte en formato Markdown para fusión en Dredd."),
+):
+    """Gate de portabilidad: lint + verificación multi-arquitectura (lo que invoca ripley)."""
+    _lint(paths, check_cross_compile, json_output, output_md)
 
 
 @app.command("report")

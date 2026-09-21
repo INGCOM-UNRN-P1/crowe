@@ -95,3 +95,20 @@ def test_warning_de_estilo_no_tumba_la_compilacion_cruzada(tmp_path):
 
     x86_roto = [r for r in check_target_compilation([roto]) if r.architecture == "x86_64"][0]
     assert not x86_roto.compilation_passed
+
+
+def test_check_verifica_multiarquitectura_por_defecto_y_lint_no(tmp_path, monkeypatch):
+    """CROWE-D0902: ripley invoca `crowe check <ws>` sin flags; debe cross-compilar."""
+    import crowe.cli as cli
+
+    llamadas = []
+    monkeypatch.setattr(cli, "check_target_compilation", lambda files: llamadas.append(list(files)) or [])
+    f = tmp_path / "a.c"
+    f.write_text("int f(void) { return 0; }\n", encoding="utf-8")
+
+    runner.invoke(app, ["lint", str(f)])
+    assert llamadas == []
+    runner.invoke(app, ["check", str(f)])
+    assert len(llamadas) == 1
+    runner.invoke(app, ["check", "--no-cross-compile", str(f)])
+    assert len(llamadas) == 1
