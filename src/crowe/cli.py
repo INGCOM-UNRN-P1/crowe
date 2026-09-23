@@ -38,8 +38,9 @@ def main_callback(
 
 def generar_seccion_markdown(report: PortabilityReport) -> str:
     """Genera sección de auditoría de portabilidad para Dredd."""
+    status = "ok" if report.passed else "fail"
     lines = [
-        "<!-- dredd-section: crowe v1.0.0 -->\n",
+        f"<!-- dredd-section: crowe, tool=crowe, version=1.0.0, status={status} -->\n",
         "## Portabilidad Multi-Arquitectura y Endianness (Crowe)\n",
     ]
     lines.append(f"- **Archivos analizados:** {len(report.files_analyzed)}")
