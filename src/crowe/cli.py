@@ -12,6 +12,7 @@ from crowe.core.portability_linter import lint_file_portability
 from crowe.core.cross_compiler import check_target_compilation
 
 app = typer.Typer(
+    context_settings={"help_option_names": ["-h", "--help"]},
     name="crowe",
     help="Linter de portabilidad multi-arquitectura y compatibilidad C",
     add_completion=True
