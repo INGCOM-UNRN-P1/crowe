@@ -4,37 +4,25 @@ import json
 from pathlib import Path
 from typing import List, Optional
 import typer
+from yutani.cli import crear_app
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+from crowe import __version__
 from crowe.core.models import PortabilityReport
 from crowe.core.portability_linter import lint_file_portability
 from crowe.core.cross_compiler import check_target_compilation
 
-app = typer.Typer(
-    context_settings={"help_option_names": ["-h", "--help"]},
-    name="crowe",
-    help="Linter de portabilidad multi-arquitectura y compatibilidad C",
-    add_completion=True
+# Contrato de línea de comandos del ecosistema (-h/--help, --version/-v, errores de datos como
+# mensajes) y textos de Typer en español, desde yutani (N-ECO-14).
+app = crear_app(
+    "crowe",
+    __version__,
+    "Linter de portabilidad multi-arquitectura y compatibilidad C",
+    add_completion=True,
+    no_args_is_help=False,
 )
 console = Console()
-
-
-def _version_callback(value: bool) -> None:
-    if value:
-        from crowe import __version__
-        console.print(f"[bold cyan]CROWE[/bold cyan] versión [green]{__version__}[/green]")
-        raise typer.Exit(code=0)
-
-
-@app.callback()
-def main_callback(
-    version: Optional[bool] = typer.Option(
-        None, "--version", "-v", help="Muestra la versión de CROWE.",
-        callback=_version_callback, is_eager=True,
-    ),
-) -> None:
-    pass
 
 
 def generar_seccion_markdown(report: PortabilityReport) -> str:

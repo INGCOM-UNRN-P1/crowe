@@ -68,7 +68,7 @@ def test_cli_lint_json(tmp_path):
 def test_cli_version():
     res = runner.invoke(app, ["--version"])
     assert res.exit_code == 0
-    assert "CROWE" in res.output
+    assert res.output.startswith("crowe ")  # formato común de yutani: «nombre versión»
     assert runner.invoke(app, ["version"]).exit_code != 0  # CROWE-D0402: ya no es subcomando
 
 
