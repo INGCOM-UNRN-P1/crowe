@@ -157,7 +157,7 @@ _OPT_ARGS = "Archivos o directorios C a analizar"
 
 @app.command("lint")
 def lint(
-    paths: List[Path] = typer.Argument(..., help=_OPT_ARGS),
+    paths: List[Path] = typer.Argument(..., exists=True, help=_OPT_ARGS),
     check_cross_compile: bool = typer.Option(False, "--cross-compile/--no-cross-compile", "-c", help="Intentar compilación contra toolchains x86_64, aarch64 y riscv64 (por defecto desactivada en `lint`)."),
     json_output: bool = typer.Option(False, "--json", help="Emitir salida en formato JSON estructurado"),
     output_md: Optional[Path] = typer.Option(None, "--md", "--output-md", help="Generar sección de reporte en formato Markdown para fusión en Dredd."),
@@ -168,7 +168,7 @@ def lint(
 
 @app.command("check")
 def check(
-    paths: List[Path] = typer.Argument(..., help=_OPT_ARGS),
+    paths: List[Path] = typer.Argument(..., exists=True, help=_OPT_ARGS),
     check_cross_compile: bool = typer.Option(True, "--cross-compile/--no-cross-compile", "-c", help="Verificar compilación contra toolchains x86_64, aarch64 y riscv64 (por defecto activada en `check`, el punto de entrada de ripley)."),
     json_output: bool = typer.Option(False, "--json", help="Emitir salida en formato JSON estructurado"),
     output_md: Optional[Path] = typer.Option(None, "--md", "--output-md", help="Generar sección de reporte en formato Markdown para fusión en Dredd."),
@@ -179,7 +179,7 @@ def check(
 
 @app.command("report")
 def report_cmd(
-    paths: List[Path] = typer.Argument(..., help="Archivos o directorios C a analizar"),
+    paths: List[Path] = typer.Argument(..., exists=True, help="Archivos o directorios C a analizar"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Ruta de destino del archivo Markdown."),
 ):
     """Genera directamente la sección de reporte Markdown de CROWE para Dredd."""
