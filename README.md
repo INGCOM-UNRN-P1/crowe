@@ -61,3 +61,24 @@ crowe lint src/ --json
 - **`CRW003`**: Asunciones fijas de orden de bytes (Endianness).
 - **`CRW004`**: Suposición del tamaño de `long` (`sizeof(long) == 4` vs `8`).
 - **`CRW005`**: Uso de Variable-Length Arrays (VLAs) con riesgo de desbordamiento de pila.
+
+<!-- p1:referencia:inicio — generado por p1-tools/scripts/readme_generado.py: no editar a mano -->
+
+## Referencia rápida
+
+### Requisitos
+
+- Python ≥ 3.11 y [uv](https://docs.astral.sh/uv/getting-started/installation/).
+
+### Comandos
+
+| Comando | Descripción |
+|:--|:--|
+| `crowe lint` | Analiza archivos C buscando asunciones no portables de hardware y endianness. |
+| `crowe check` | Gate de portabilidad: lint + verificación multi-arquitectura (lo que invoca ripley). |
+| `crowe report` | Genera directamente la sección de reporte Markdown de CROWE para Dredd. |
+| `crowe doctor` | Verifica el estado del entorno de auditoría de portabilidad CROWE (Python, GCC nativo y cross-compiladores). |
+
+Ayuda de cada comando: `crowe <comando> -h`.
+
+<!-- p1:referencia:fin -->
