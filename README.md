@@ -50,7 +50,16 @@ crowe lint src/ --cross-compile
 
 # Salida estructurada en JSON
 crowe lint src/ --json
+
+# Correr el programa en cada arquitectura (qemu) y comparar la salida con la nativa
+crowe run main.c --input caso1.in
 ```
+
+`crowe run` compila estático con la toolchain de cada arquitectura (`aarch64-linux-gnu-gcc`,
+`riscv64-linux-gnu-gcc`), lo ejecuta con `qemu-aarch64`/`qemu-riscv64` (paquete `qemu-user`) y
+marca las arquitecturas donde la salida o el código de salida cambian: los errores de portabilidad
+que compilan igual (el signo de `char`, el tamaño de `long`, el orden de bytes). Sin toolchain o sin
+qemu, esa arquitectura se informa como no disponible.
 
 ---
 
@@ -76,6 +85,7 @@ crowe lint src/ --json
 |:--|:--|
 | `crowe lint` | Analiza archivos C buscando asunciones no portables de hardware y endianness. |
 | `crowe check` | Gate de portabilidad: lint + verificación multi-arquitectura (lo que invoca ripley). |
+| `crowe run` | Corre el programa en cada arquitectura con qemu y compara la salida con la nativa. |
 | `crowe report` | Genera directamente la sección de reporte Markdown de CROWE para Dredd. |
 | `crowe doctor` | Verifica el estado del entorno de auditoría de portabilidad CROWE (Python, GCC nativo y cross-compiladores). |
 
@@ -83,7 +93,7 @@ Ayuda de cada comando: `crowe <comando> -h`.
 
 ### Salida JSON
 
-Con `--json`, estos comandos emiten el resultado como JSON por la salida estándar, para usarlo desde scripts, ripley o dredd: `crowe lint`, `crowe check`, `crowe doctor`. El de `doctor --json` lleva `schema_version` y `ok`.
+Con `--json`, estos comandos emiten el resultado como JSON por la salida estándar, para usarlo desde scripts, ripley o dredd: `crowe lint`, `crowe check`, `crowe run`, `crowe doctor`. El de `doctor --json` lleva `schema_version` y `ok`.
 
 ### Códigos de salida
 

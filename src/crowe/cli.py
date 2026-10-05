@@ -165,6 +165,34 @@ def check(
     _lint(paths, check_cross_compile, json_output, output_md)
 
 
+@app.command("run")
+def run_cmd(
+    fuentes: List[Path] = typer.Argument(..., exists=True, dir_okay=False, help="Fuentes .c del programa."),
+    entrada: Optional[Path] = typer.Option(None, "--input", "-i", exists=True, dir_okay=False, help="Archivo con la entrada estándar."),
+    arquitectura: Optional[List[str]] = typer.Option(None, "--arch", "-a", help="x86_64, aarch64 o riscv64 (repetible; por defecto, todas)."),
+    json_output: bool = typer.Option(False, "--json", help="Emitir salida en formato JSON estructurado"),
+):
+    """Corre el programa en cada arquitectura con qemu y compara la salida con la nativa."""
+    from crowe.core.emulacion import ejecutar_en_arquitecturas
+
+    datos = entrada.read_text(encoding="utf-8") if entrada else ""
+    res = ejecutar_en_arquitecturas(list(fuentes), datos, arquitecturas=arquitectura)
+    if json_output:
+        print(json.dumps(res.to_dict(), indent=2, ensure_ascii=False))
+        raise typer.Exit(code=1 if res.diferencias else 0)
+    tabla = Table(title=f"Ejecución en cada arquitectura (nativa: {res.nativa})")
+    for col in ("Arquitectura", "Estado", "Código", "Salida / detalle"):
+        tabla.add_column(col)
+    for c in res.corridas:
+        marca = "[red]DISTINTA[/red]" if c.arquitectura in res.diferencias else c.estado
+        tabla.add_row(c.arquitectura, marca, "" if c.codigo is None else str(c.codigo), (c.salida or c.detalle)[:80])
+    console.print(tabla)
+    if res.diferencias:
+        console.print(f"[bold red]La salida cambia en {', '.join(res.diferencias)}:[/bold red] revisá el signo de char, "
+                      "el tamaño de long y de los punteros y el orden de bytes (crowe lint lo detalla).")
+        raise typer.Exit(code=1)
+
+
 @app.command("report")
 def report_cmd(
     paths: List[Path] = typer.Argument(..., exists=True, help="Archivos o directorios C a analizar"),
